@@ -20,12 +20,35 @@ class Task {
 public:
 	Task();
 
+	/*
+	 * @brief Reads the street segments from a file.
+	 *
+	 * @param file_path The path to the file to read.
+	 *
+	 * @return true on success, false on failure.
+	 */
 	bool Read(const wchar_t* file_path);
 
+	/*
+	 * @brief Solves the task by creating a street map of the read segments 
+	 * while looking for duplicates.
+	 * 
+	 * @return true on success, false on failure.
+	 */
 	bool Solve();
 
+	/*
+	 * @brief Gets the last error that occurred during the task.
+	 *
+	 * @return The last error that occurred.
+	 */
 	TaskError GetLastError() const;
 
+	/*
+	 * @brief Removes all segments from cache.
+	 *
+	 * @return true on success, false on failure.
+	 */
 	bool Clear();
 
 	~Task() { Clear(); }
@@ -42,6 +65,9 @@ private:
 	StreetSegment* _ParseSchemeAsStreetSegment(const std::wstring& line, const std::wstring& scheme, size_t street_name_pos,
 		size_t street_name_length, size_t street_type_pos, size_t street_type_length, size_t from_pos,
 		size_t from_length, size_t to_pos, size_t to_length);
+
+	// Helpers for Solving
+	std::vector<std::unique_ptr<StreetSegment>> _GetDuplicates(const StreetAddresses& street_addresses);
 
 	std::vector <std::unique_ptr<StreetSegment>> _segments;
 	TaskError _last_error;

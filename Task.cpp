@@ -3,10 +3,14 @@
 // Project includes
 #include "Task.h"
 #include "StreetSegment.h"
+#include "StreetAddresses.h"
 
 // Standard library includes
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <iostream>
+#include <format>
 
 Task::Task() 
 	: _last_error(TaskError::None) 
@@ -73,11 +77,6 @@ bool Task::Read(const wchar_t* file_path) {
 		{
 			_segments.emplace_back(segment);
 		}
-	}
-
-	for (auto& segment : _segments) 
-	{
-		segment->Print();
 	}
 
 	return true;
@@ -168,19 +167,19 @@ StreetSegment* Task::_ParseSchemeAsStreetSegment(
 	, size_t to_length
 	) {
 	StreetSegment* street_segment = nullptr;
-	if (!scheme.empty()) {
+	if (!scheme.empty() && street_name_length) {
 		std::wstring street = line.substr(street_name_pos, street_name_length)
 			+ L" "
 			+ line.substr(street_type_pos, street_type_length);
 		int from = std::stoi(line.substr(from_pos, from_length));
 		int to = std::stoi(line.substr(to_pos, to_length));
-		if (scheme == L"E") {
+		if (scheme[0] == StreetSegment::Utils::GetTypeW(StreetSegment::Type::Even)) {
 			street_segment = StreetSegment::CreateEven(std::move(street), from, to);
 		}
-		else if (scheme == L"O") {
+		else if (scheme[0] == StreetSegment::Utils::GetTypeW(StreetSegment::Type::Odd)) {
 			street_segment = StreetSegment::CreateOdd(std::move(street), from, to);
 		}
-		else if (scheme == L"M") {
+		else if (scheme[0] == StreetSegment::Utils::GetTypeW(StreetSegment::Type::Mixed)) {
 			street_segment = StreetSegment::CreateMixed(std::move(street), from, to);
 		}
 	}
@@ -188,8 +187,104 @@ StreetSegment* Task::_ParseSchemeAsStreetSegment(
 }
 
 bool Task::Solve() {
-	_SetLastError(TaskError::UnimplementedError);
-	return false;
+	StreetAddresses street_addresses;
+
+	// Insert all street segments into the street addresses map
+	for (const auto& segment : _segments) 
+	{
+		if (segment) 
+		{
+			segment->InsertTo(street_addresses);
+		}
+	}
+	
+	// Get duplicates from the street segments
+	std::vector<std::unique_ptr<StreetSegment>> duplicated_segments = _GetDuplicates(street_addresses);
+	
+	// Optional sorting of duplicated segments
+	std::sort(duplicated_segments.begin(), duplicated_segments.end(),
+		[](const std::unique_ptr<StreetSegment>& a, const std::unique_ptr<StreetSegment>& b) {
+		if (a->GetStreetName() == b->GetStreetName()) {
+			return a->GetFrom() < b->GetFrom();
+		}
+		return a->GetStreetName() < b->GetStreetName();
+	});
+
+	// Print to standard output
+	for (const auto& segment : duplicated_segments)
+	{
+		segment->Print();
+	}
+
+	return true;
+}
+
+std::vector<std::unique_ptr<StreetSegment>> Task::_GetDuplicates(const StreetAddresses& street_addresses) {
+	std::vector<std::unique_ptr<StreetSegment>> duplicated_segments;
+	for (const auto& [street_name, data] : street_addresses)
+	{
+		const auto& duplicates = data.second;
+		auto it = duplicates.begin();
+		if (it == duplicates.end()) // No duplicates for this street
+		{
+			continue;
+		}
+		uint16_t from = *it;
+		auto prev_it = it;
+		StreetSegment::Type segment_type = StreetSegment::Type::Undefined;
+		++it;
+		while (it != duplicates.end()) {
+			if (segment_type == StreetSegment::Type::Undefined)
+			{
+				if (*it % 2 == 0 && *it - *prev_it == 2)
+				{
+					segment_type = StreetSegment::Type::Even;
+				}
+				else if (*it % 2 == 1 && *it - *prev_it == 2)
+				{
+					segment_type = StreetSegment::Type::Odd;
+				}
+				else
+				{
+					segment_type = StreetSegment::Type::Mixed;
+				}
+			}
+			else if (
+				segment_type == StreetSegment::Type::Even && *it - *prev_it != 2
+				|| segment_type == StreetSegment::Type::Odd && *it - *prev_it != 2
+				|| segment_type == StreetSegment::Type::Mixed && *it - *prev_it != 1
+				)
+			{
+				if (auto segment = StreetSegment::Create(
+					street_name,
+					segment_type,
+					from,
+					*prev_it
+				))
+				{
+					duplicated_segments.emplace_back(segment);
+				}
+				if (segment_type == StreetSegment::Type::Undefined) {
+					segment_type = StreetSegment::Type::Mixed; // Default to Mixed if no type was determined
+				}
+				segment_type = StreetSegment::Type::Undefined;
+				from = *it;
+			}
+			prev_it = it;
+			++it;
+		};
+
+		if (auto segment = StreetSegment::Create(
+			street_name,
+			segment_type == StreetSegment::Type::Undefined ? StreetSegment::Type::Mixed : segment_type,
+			from,
+			*prev_it
+		))
+		{
+			duplicated_segments.emplace_back(segment);
+		}
+	}
+	return duplicated_segments;
 }
 
 TaskError Task::GetLastError() const {
