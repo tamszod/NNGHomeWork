@@ -132,9 +132,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="NNGHomeWork.cpp" />
+    <ClCompile Include="StreetSegment.cpp" />
+    <ClCompile Include="Task.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="x64\Debug\network.csv" />
+    <ClInclude Include="StreetAddresses.h" />
+    <ClInclude Include="StreetSegment.h" />
+    <ClInclude Include="Task.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="network.csv" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

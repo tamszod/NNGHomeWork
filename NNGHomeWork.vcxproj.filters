@@ -21,9 +21,26 @@
     <ClCompile Include="NNGHomeWork.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StreetSegment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Task.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="x64\Debug\network.csv">
+    <ClInclude Include="StreetSegment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Task.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StreetAddresses.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="network.csv">
       <Filter>Input Files</Filter>
     </None>
   </ItemGroup>
